@@ -11,14 +11,19 @@ in
 {
   options.services.circleci-runners = mkOption {
     default = { };
-    type = types.attrsOf (types.submodule { options = import ./nixos-module/options.nix; });
+    type = types.attrsOf (types.submodule {
+      options = import ./nixos-module/options.nix args;
+    });
   };
   config = {
-    systemd.services = flip mapAttrs' cfg (n: v:
-      nameValuePair "circleci-runner-${n}"
+    systemd.services = flip mapAttrs' cfg (name: v:
+      nameValuePair "circleci-runner-${name}"
         (import ./nixos-module/service.nix
           { inherit circleci-launch-agent; }
-          (args // { cfg = cfg.${n}; }))
+          (args // {
+            runnerName = name;
+            cfg = config.services.circleci-runners.${name};
+          }))
     );
   };
 }
